@@ -1,6 +1,7 @@
 import pygame
 import numpy as np
 import math
+import json
 
 RESOLUTION = np.array([800, 600])
 VIEW_SIZE = 20
@@ -8,12 +9,50 @@ VIEW_SIZE = 20
 pygame.init()
 screen = pygame.display.set_mode(RESOLUTION)
 
-maze = []
+
+with open("maze.json", "r") as f:
+    maze = json.load(f)
 width, height = 10, 10
 offset = (20, 30)
 
+gray = (100, 100, 100)  # grid color
+white = (255, 255, 255)  # wall color
+
 MOUSE_DRAG = False
 MOUSE_POS = None
+
+def draw_maze():
+    for i, row in enumerate(maze):
+        for j, cell in enumerate(row):
+            x, y = j * VIEW_SIZE + offset[0], i * VIEW_SIZE + offset[1]
+            pygame.draw.line(
+                screen,
+                white if cell["top"] else gray,
+                (x, y),
+                (x + VIEW_SIZE, y),
+                3 if cell["top"] else 1,
+            )
+            pygame.draw.line(
+                screen,
+                white if cell["bottom"] else gray,
+                (x, y + VIEW_SIZE),
+                (x + VIEW_SIZE, y + VIEW_SIZE),
+                3 if cell["bottom"] else 1,
+            )
+            pygame.draw.line(
+                screen,
+                white if cell["left"] else gray,
+                (x, y),
+                (x, y + VIEW_SIZE),
+                3 if cell["left"] else 1,
+            )
+            pygame.draw.line(
+                screen,
+                white if cell["right"] else gray,
+                (x + VIEW_SIZE, y),
+                (x + VIEW_SIZE, y + VIEW_SIZE),
+                3 if cell["right"] else 1,
+            )
 
 while True:
     for event in pygame.event.get():
@@ -41,22 +80,6 @@ while True:
 
     screen.fill((0, 0, 0))
 
-    for x in range(width + 1):
-        pygame.draw.line(
-            screen,
-            (255, 255, 255),
-            (x * VIEW_SIZE + offset[0], offset[1]),
-            (x * VIEW_SIZE + offset[0], height * VIEW_SIZE + offset[1]),
-        )
-    for y in range(height + 1):
-        pygame.draw.line(
-            screen,
-            (255, 255, 255),
-            (offset[0], y * VIEW_SIZE + offset[1]),
-            (width * VIEW_SIZE + offset[0], y * VIEW_SIZE + offset[1]),
-        )
-
-    for x, y in maze:
-        pygame.draw.rect(screen, (255, 255, 255), (x * 20, y * 20, 20, 20))
+    draw_maze()
 
     pygame.display.flip()

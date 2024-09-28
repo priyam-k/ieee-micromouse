@@ -17,8 +17,9 @@ ieee micromouse repo for 2024-25 yr
 	- F: fill all walls in maze
 	- B: fill in borders in maze
 	- G: generate a random maze (using DFS)
+	- S: save maze to maze.json, to be used with floodfilltest.py
 
 ## floodfilltest.py
 - not implemented yet
 - will be a testing thing to try out floodfill
-- will use same base as maze_setup (drag + zoom, same maze representation)
+- will use same base as maze_setup (drag + zoom, same maze representation) (autoloads from maze.json)

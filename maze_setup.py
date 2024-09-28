@@ -2,6 +2,7 @@ import random
 import pygame
 import numpy as np
 import math
+import json
 
 RESOLUTION = np.array([800, 600])
 VIEW_SIZE = 20
@@ -177,6 +178,16 @@ def generate_maze(x, y):
             ] = False
             generate_maze(nx, ny)
 
+def save_maze():
+    cleaned_maze = [
+        [
+            {k: v for k, v in cell.items() if k != "visited"}
+            for cell in row
+        ]
+        for row in maze
+    ]
+    with open("maze.json", "w") as f:
+        json.dump(cleaned_maze, f)
 
 while True:
     for event in pygame.event.get():
@@ -236,6 +247,8 @@ while True:
             if event.key == pygame.K_g:  # generate maze
                 fill_maze(True)  # fill maze so it can be carved
                 generate_maze(0, 0)
+            if event.key == pygame.K_s:
+                save_maze()
 
     screen.fill((0, 0, 0))
 
