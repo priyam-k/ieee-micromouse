@@ -1,6 +1,14 @@
 # ieee-micromouse
 ieee micromouse repo for 2024-25 yr
-  
+
+## mms-floodfill.py
+- full floodfill algorithm and maze solving implemented
+- uses mms tool from https://github.com/mackorone/mms
+- API.py has some tools to help communicate between this file and the mms.exe program
+- TODO:
+	- optimize turns (currently only turns right, should turn left when thats faster)
+	- optimize pathing (once it knows final path, it should do long straight parts faster)
+	- optimize diagonals (recognize diagonals and go thru at 45 degrees for final path)
 
 ## maze_setup.py
 - a tool for generating maze layouts easily and exporting to floodfill visualizer
@@ -20,6 +28,6 @@ ieee micromouse repo for 2024-25 yr
 	- S: save maze to maze.json, to be used with floodfilltest.py
 
 ## floodfilltest.py
-- not implemented yet
-- will be a testing thing to try out floodfill
-- will use same base as maze_setup (drag + zoom, same maze representation) (autoloads from maze.json)
+- uses maze from maze_setup.py (after saving to maze.json)
+- currently just shows the flood matrix on top of it
+- not super useful tbh
