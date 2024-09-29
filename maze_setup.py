@@ -17,13 +17,12 @@ offset = (20, 30)
 gray = (100, 100, 100)  # grid color
 white = (255, 255, 255)  # wall color
 
-maze = [
-    [
-        {"top": False, "bottom": False, "left": False, "right": False, "visited": False}
-        for _ in range(width)
-    ]
-    for _ in range(height)
-]
+with open("maze.json", "r") as f:
+    maze = json.load(f)
+for row in maze:
+    for cell in row:
+        cell["visited"] = False
+
 
 MOUSE_DRAG = False
 MOUSE_POS = None
@@ -188,6 +187,64 @@ def save_maze():
     ]
     with open("maze.json", "w") as f:
         json.dump(cleaned_maze, f)
+    return cleaned_maze
+
+def maze_to_text(filename='maze.txt'):
+    # Get maze dimensions
+    rows = len(maze)
+    cols = len(maze[0])
+
+    # Initialize the result as a list of strings
+    maze_text = []
+
+    # Iterate over each row in the maze
+    for i in range(rows):
+        # Top wall
+        top_row = []
+        for j in range(cols):
+            top_row.append('o')
+            if maze[i][j]['top']:
+                top_row.append('---')
+            else:
+                top_row.append('   ')
+        top_row.append('o')
+        maze_text.append(''.join(top_row))
+
+        # Side walls and empty spaces
+        side_row = []
+        for j in range(cols):
+            if maze[i][j]['left']:
+                side_row.append('|')
+            else:
+                side_row.append(' ')
+            side_row.append('   ')
+        # Right wall for the last cell in the row
+        if maze[i][-1]['right']:
+            side_row.append('|')
+        else:
+            side_row.append(' ')
+        maze_text.append(''.join(side_row))
+
+    # Add the bottom walls for the last row
+    bottom_row = []
+    for j in range(cols):
+        bottom_row.append('o')
+        if maze[-1][j]['bottom']:
+            bottom_row.append('---')
+        else:
+            bottom_row.append('   ')
+    bottom_row.append('o')
+    maze_text.append(''.join(bottom_row))
+
+    # Join all rows into one string
+    output = '\n'.join(maze_text)
+
+    # Save to file
+    with open(filename, 'w') as f:
+        f.write(output)
+
+    print(f'Maze saved to {filename}')
+
 
 while True:
     for event in pygame.event.get():
@@ -249,6 +306,8 @@ while True:
                 generate_maze(0, 0)
             if event.key == pygame.K_s:
                 save_maze()
+            if event.key == pygame.K_t:
+                maze_to_text()
 
     screen.fill((0, 0, 0))
 
