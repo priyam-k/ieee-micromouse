@@ -191,9 +191,9 @@ def colorPaths(flood, pos, dxy, taken):
     colorPredictedPath(flood, pos, dxy, taken)
     
 
-def runMouse(pos, dxy):
+def runMouse(pos, dxy, target=(7, 7)):
     global cells
-    flood = flood_fill(7, 7)
+    flood = flood_fill(target[0], target[1])
     updateGUIflood(flood)
     pathTaken = []
     predDist = flood[pos[1]][pos[0]]
@@ -213,7 +213,7 @@ def runMouse(pos, dxy):
         if API.wallLeft(): API.setWall(pos[0], 15-pos[1], card(get_dir("left", dxy)))
         if API.wallRight(): API.setWall(pos[0], 15-pos[1], card(get_dir("right", dxy)))
         # reset flood
-        flood = flood_fill(7, 7)
+        flood = flood_fill(target[0], target[1])
         # update flood values on gui
         updateGUIflood(flood)
         # color taken path and predicted path
@@ -231,14 +231,43 @@ def runMouse(pos, dxy):
         API.moveForward()
         pos = add(pos, dxy)
 
-    flood = flood_fill(7, 7)
+    flood = flood_fill(target[0], target[1])
     updateGUIflood(flood, True)
     log("Done!")
-    return API.getStat("current-run-distance") > predDist
+    return API.getStat("current-run-distance") > predDist, pathTaken, pos, dxy
+
+def sub(a, b):
+    return (a[0] - b[0], a[1] - b[1])
+
+def pathToInstr(pos, dxy, path):
+    instructions = []
+    for i in range(len(path)-1):
+        npos = path[i+1]
+        ndxy = sub(npos, pos)
+        assert is_path(pos[0], pos[1], npos[0], npos[1])
+        if ndxy == dxy:
+            instructions.append("f")
+        elif ndxy == orient("r", dxy):
+            instructions.append("r")
+            dxy = ndxy
+        elif ndxy == orient("l", dxy):
+            instructions.append("l")
+            dxy = ndxy
+        else:
+            instructions.append("rr")
+            dxy = orient("r", orient("r", dxy))
+
+        pos = npos
+    return instructions
+
+def runPath(pos, dxy, path):
+    pass
+    
+
 
 def main():
     global cells
-    time.sleep(5)
+    #time.sleep(5)
     log("Running...")
     API.setColor(0, 0, "G")
     API.setText(0, 0, "abc")
@@ -250,9 +279,11 @@ def main():
     notOptimal = True
 
     while notOptimal:
-        notOptimal = runMouse(pos, dxy)
+        notOptimal, path, pos, dxy = runMouse(pos, dxy)
         time.sleep(3)
-        API.ackReset()
+        notOptimal, path, pos, dxy = runMouse(pos, dxy, (0, 15))
+        time.sleep(3)
+        #API.ackReset()
     log("\n\n"+"-"*30+"\nOptimal path found!")
     log("Replaying optimal path...")
     time.sleep(2)
