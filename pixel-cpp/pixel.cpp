@@ -31,6 +31,27 @@ struct Cell {
     }
 };
 
+struct pair {
+    pair() : first(0), second(0) {}
+    pair(int first, int second) : first(first), second(second) {}
+
+    bool operator==(const pair& other) const {
+        return first == other.first && second == other.second;
+    }
+
+    bool operator!=(const pair& other) const {
+        return first != other.first || second != other.second;
+    }
+
+    pair operator+(const pair& other) const {
+        return pair(first + other.first, second + other.second);
+    }
+
+    int first;
+    int second;
+};
+
+
 Cell cells[16][16]; // 16x16 maze (of known cells)
 int flood[16][16]; // flood fill values
 
@@ -47,9 +68,8 @@ bool is_path(int x1, int y1, int x2, int y2){
         } else if (x1 == x2 - 1) {
             return !cells[y1][x1].right && !cells[y2][x2].left;
         }
-    } else {
-        return false;
     }
+    return false;
 }
 
 void flood_fill(int startx, int starty) {
@@ -61,12 +81,12 @@ void flood_fill(int startx, int starty) {
     }
 
     flood[startx][starty] = 0; // starting point is distance 0
-    std::vector<std::pair<int, int>> queue; // queue of cells to visit
+    std::vector<pair> queue; // queue of cells to visit
     queue.push_back({startx, starty}); // add first cell to queue
 
     while (!queue.empty()){
         // get the first cell in the queue
-        std::pair<int,int> begin = queue.front();
+        pair begin = queue.front();
         queue.erase(queue.begin());
         int x = begin.first;
         int y = begin.second;
@@ -99,18 +119,18 @@ void updateGUIflood() {
     }
 }
 
-std::pair<int, int> orient(char dir, const std::pair<int, int>& dxy) {
-    std::pair<int, int> ndxy;  // New dxy after turning
+pair orient(char dir, const pair& dxy) {
+    pair ndxy;  // New dxy after turning
     
     if (tolower(dir) == 'r') {
         // Turn right (rotate 90 degrees clockwise)
-        ndxy = std::make_pair(-dxy.second, dxy.first);
+        ndxy = pair(-dxy.second, dxy.first);
     } else if (tolower(dir) == 'l') {
         // Turn left (rotate 90 degrees counter-clockwise)
-        ndxy = std::make_pair(dxy.second, -dxy.first);
+        ndxy = pair(dxy.second, -dxy.first);
     } else if (tolower(dir) == 'b') {
         // Turn back (rotate 180 degrees)
-        ndxy = std::make_pair(-dxy.first, -dxy.second);
+        ndxy = pair(-dxy.first, -dxy.second);
     } else {
         // No turn
         ndxy = dxy;
@@ -119,23 +139,23 @@ std::pair<int, int> orient(char dir, const std::pair<int, int>& dxy) {
     return ndxy;
 }
 
-std::string get_dir(const std::string& dir, const std::pair<int, int>& dxy) {
-    if (dxy == std::make_pair(0, -1)) { // up
+std::string get_dir(const std::string& dir, const pair& dxy) {
+    if (dxy == pair(0, -1)) { // up
         if (dir == "front") return "top";
         if (dir == "back") return "bottom";
         if (dir == "left") return "left";
         if (dir == "right") return "right";
-    } else if (dxy == std::make_pair(0, 1)) { // down
+    } else if (dxy == pair(0, 1)) { // down
         if (dir == "front") return "bottom";
         if (dir == "back") return "top";
         if (dir == "left") return "right";
         if (dir == "right") return "left";
-    } else if (dxy == std::make_pair(-1, 0)) { // left
+    } else if (dxy == pair(-1, 0)) { // left
         if (dir == "front") return "left";
         if (dir == "back") return "right";
         if (dir == "left") return "bottom";
         if (dir == "right") return "top";
-    } else if (dxy == std::make_pair(1, 0)) { // right
+    } else if (dxy == pair(1, 0)) { // right
         if (dir == "front") return "right";
         if (dir == "back") return "left";
         if (dir == "left") return "top";
@@ -144,22 +164,18 @@ std::string get_dir(const std::string& dir, const std::pair<int, int>& dxy) {
     return ""; // in case of an invalid direction
 }
 
-bool inMaze(const std::pair<int, int>& pos) {
+bool inMaze(const pair& pos) {
     return pos.first >= 0 && pos.first < 16 && pos.second >= 0 && pos.second < 16;
 }
 
-std::pair<int,int> addPair(const std::pair<int, int>& pos, const std::pair<int, int>& dxy) {
-    return std::make_pair(pos.first + dxy.first, pos.second + dxy.second);
-}
-
-void runMouse(std::pair<int, int>& pos, std::pair<int,int>& dxy, const std::pair<int,int>& target) {
+void runMouse(pair& pos, pair& dxy, const pair& target) {
     while (pos != target) {
         cells[pos.second][pos.first] //set front wall
             .setByName(
                 get_dir("front", dxy),
                 API::wallFront());
-        if (inMaze(addPair(pos, dxy))) { //set other side of front wall
-            cells[addPair(pos, dxy).second][addPair(pos, dxy).first]
+        if (inMaze(pos + dxy)) { //set other side of front wall
+            cells[(pos+dxy).second][(pos+dxy).first]
                 .setByName(
                     get_dir("back", dxy),
                     API::wallFront());
@@ -169,8 +185,8 @@ void runMouse(std::pair<int, int>& pos, std::pair<int,int>& dxy, const std::pair
             .setByName(
                 get_dir("right", dxy),
                 API::wallRight());
-        if (inMaze(addPair(pos, orient('r', dxy)))) { //set other side of right wall
-            cells[addPair(pos, orient('r', dxy)).second][addPair(pos, orient('r', dxy)).first]
+        if (inMaze(pos+orient('r', dxy))) { //set other side of right wall
+            cells[(pos+orient('r', dxy)).second][(pos+orient('r', dxy)).first]
                 .setByName(
                     get_dir("left", dxy),
                     API::wallRight());
@@ -180,8 +196,8 @@ void runMouse(std::pair<int, int>& pos, std::pair<int,int>& dxy, const std::pair
             .setByName(
                 get_dir("left", dxy),
                 API::wallLeft());
-        if (inMaze(addPair(pos, orient('l', dxy)))) { //set other side of left wall
-            cells[addPair(pos, orient('l', dxy)).second][addPair(pos, orient('l', dxy)).first]
+        if (inMaze(pos+orient('l', dxy))) { //set other side of left wall
+            cells[(pos+orient('l', dxy)).second][(pos+orient('l', dxy)).first]
                 .setByName(
                     get_dir("right", dxy),
                     API::wallLeft());
@@ -190,12 +206,12 @@ void runMouse(std::pair<int, int>& pos, std::pair<int,int>& dxy, const std::pair
         flood_fill(target.first, target.second);
         updateGUIflood();
 
-        std::pair<int, int> next = addPair(pos, dxy);
+        pair next = pos+dxy;
         while (!is_path(pos.first, pos.second, next.first, next.second)
             || !(flood[next.second][next.first] < flood[pos.second][pos.first])) {
             API::turnRight();
             dxy = orient('r', dxy);
-            next = addPair(pos, dxy);
+            next = pos+dxy;
         }
         API::moveForward();
         pos = next;
@@ -210,13 +226,13 @@ int main(int argc, char* argv[]) {
     updateGUIflood();
     log("Done!");
 
-    std::pair<int,int> dxy = std::make_pair(0, -1); // direction vector
-    std::pair<int,int> pos = std::make_pair(0, 15); // starting position
+    pair dxy = pair(0, -1); // direction vector
+    pair pos = pair(0, 15); // starting position
 
-    runMouse(pos, dxy, std::make_pair(7, 7));
+    runMouse(pos, dxy, pair(7, 7));
 
     API::setColor(0, 0, 'G');
-    API::setText(0, 0, "abc");
+    API::setText(0, 0, "abhdbekf");
     while (false) {
         if (!API::wallLeft()) {
             API::turnLeft();
