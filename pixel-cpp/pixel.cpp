@@ -1,6 +1,6 @@
 #include <iostream>
 #include <string>
-#include <vector>
+//#include <vector>
 
 #include "API.h"
 
@@ -31,26 +31,107 @@ struct Cell {
     }
 };
 
-struct pair {
-    pair() : first(0), second(0) {}
-    pair(int first, int second) : first(first), second(second) {}
+struct Pair {
+    Pair() : first(0), second(0) {}
+    Pair(int first, int second) : first(first), second(second) {}
 
-    bool operator==(const pair& other) const {
+    bool operator==(const Pair& other) const {
         return first == other.first && second == other.second;
     }
 
-    bool operator!=(const pair& other) const {
+    bool operator!=(const Pair& other) const {
         return first != other.first || second != other.second;
     }
 
-    pair operator+(const pair& other) const {
-        return pair(first + other.first, second + other.second);
+    Pair operator+(const Pair& other) const {
+        return Pair(first + other.first, second + other.second);
     }
 
     int first;
     int second;
 };
 
+class Queue {
+private:
+    Pair* data;      // Dynamic array for queue storage
+    int front;       // Index of the front element
+    int back;        // Index of the back element
+    int capacity;    // Current capacity of the queue
+    int size;        // Current number of elements in the queue
+
+    // Function to resize the array when needed
+    void resize(int new_capacity) {
+        Pair* new_data = new Pair[new_capacity];
+        // Copy data in correct order from the circular queue
+        for (int i = 0; i < size; ++i) {
+            new_data[i] = data[(front + i) % capacity];
+        }
+        delete[] data;    // Free the old memory
+        data = new_data;  // Point to the new array
+        front = 0;        // Reset front to 0
+        back = size;      // Reset back to size (new end of queue)
+        capacity = new_capacity;
+    }
+
+public:
+    // Constructor
+    Queue(int initial_capacity = 4) : front(0), back(0), capacity(initial_capacity), size(0) {
+        data = new Pair[capacity];
+    }
+
+    // Destructor
+    ~Queue() {
+        delete[] data;
+    }
+
+    // Enqueue an element at the back
+    void enqueue(const Pair& value) {
+        if (size == capacity) {
+            // Double the capacity when full
+            resize(2 * capacity);
+        }
+        data[back] = value;
+        back = (back + 1) % capacity;  // Wrap around using modulo
+        ++size;
+    }
+
+    // Dequeue an element from the front
+    Pair dequeue() {
+        if (size == 0) {
+            throw std::underflow_error("Queue is empty");
+        }
+        Pair value = data[front];
+        front = (front + 1) % capacity; // Move front forward and wrap around
+        --size;
+
+        // Shrink the array if usage drops significantly (quarter full)
+        if (size > 0 && size == capacity / 4) {
+            resize(capacity / 2);
+        }
+
+        return value;
+    }
+
+    // Check if the queue is empty
+    bool isEmpty() const {
+        return size == 0;
+    }
+
+    // Get the size of the queue
+    int getSize() const {
+        return size;
+    }
+
+    // Print the entire queue for debugging purposes
+    void printQueue() const {
+        std::cout << "Queue: ";
+        for (int i = 0; i < size; ++i) {
+            Pair p = data[(front + i) % capacity];
+            std::cout << "(" << p.first << ", " << p.second << ") ";
+        }
+        std::cout << std::endl;
+    }
+};
 
 Cell cells[16][16]; // 16x16 maze (of known cells)
 int flood[16][16]; // flood fill values
@@ -81,34 +162,34 @@ void flood_fill(int startx, int starty) {
     }
 
     flood[startx][starty] = 0; // starting point is distance 0
-    std::vector<pair> queue; // queue of cells to visit
-    queue.push_back({startx, starty}); // add first cell to queue
+    Queue queue; // queue of cells to visit
+    queue.enqueue({startx, starty}); // add first cell to queue
 
-    while (!queue.empty()){
+    while (!queue.isEmpty()){
         // get the first cell in the queue
-        pair begin = queue.front();
-        queue.erase(queue.begin());
+        Pair begin = queue.dequeue();
         int x = begin.first;
         int y = begin.second;
 
         // check all neighboring cells
         if (x > 0 && flood[y][x-1] == 999 && is_path(x, y, x-1, y)){ // left
             flood[y][x-1] = flood[y][x] + 1;
-            queue.push_back({x-1, y});
+            queue.enqueue({x-1, y});
         }
         if (x < 15 && flood[y][x+1] == 999 && is_path(x, y, x+1, y)){ // right
             flood[y][x+1] = flood[y][x] + 1;
-            queue.push_back({x+1, y});
+            queue.enqueue({x+1, y});
         }
         if (y > 0 && flood[y-1][x] == 999 && is_path(x, y, x, y-1)){ // up
             flood[y-1][x] = flood[y][x] + 1;
-            queue.push_back({x, y-1});
+            queue.enqueue({x, y-1});
         }
         if (y < 15 && flood[y+1][x] == 999 && is_path(x, y, x, y+1)){ // down
             flood[y+1][x] = flood[y][x] + 1;
-            queue.push_back({x, y+1});
+            queue.enqueue({x, y+1});
         }
     }
+    //free(&queue);
 }
 
 void updateGUIflood() {
@@ -119,18 +200,18 @@ void updateGUIflood() {
     }
 }
 
-pair orient(char dir, const pair& dxy) {
-    pair ndxy;  // New dxy after turning
+Pair orient(char dir, const Pair& dxy) {
+    Pair ndxy;  // New dxy after turning
     
     if (tolower(dir) == 'r') {
         // Turn right (rotate 90 degrees clockwise)
-        ndxy = pair(-dxy.second, dxy.first);
+        ndxy = Pair(-dxy.second, dxy.first);
     } else if (tolower(dir) == 'l') {
         // Turn left (rotate 90 degrees counter-clockwise)
-        ndxy = pair(dxy.second, -dxy.first);
+        ndxy = Pair(dxy.second, -dxy.first);
     } else if (tolower(dir) == 'b') {
         // Turn back (rotate 180 degrees)
-        ndxy = pair(-dxy.first, -dxy.second);
+        ndxy = Pair(-dxy.first, -dxy.second);
     } else {
         // No turn
         ndxy = dxy;
@@ -139,23 +220,23 @@ pair orient(char dir, const pair& dxy) {
     return ndxy;
 }
 
-std::string get_dir(const std::string& dir, const pair& dxy) {
-    if (dxy == pair(0, -1)) { // up
+std::string get_dir(const std::string& dir, const Pair& dxy) {
+    if (dxy == Pair(0, -1)) { // up
         if (dir == "front") return "top";
         if (dir == "back") return "bottom";
         if (dir == "left") return "left";
         if (dir == "right") return "right";
-    } else if (dxy == pair(0, 1)) { // down
+    } else if (dxy == Pair(0, 1)) { // down
         if (dir == "front") return "bottom";
         if (dir == "back") return "top";
         if (dir == "left") return "right";
         if (dir == "right") return "left";
-    } else if (dxy == pair(-1, 0)) { // left
+    } else if (dxy == Pair(-1, 0)) { // left
         if (dir == "front") return "left";
         if (dir == "back") return "right";
         if (dir == "left") return "bottom";
         if (dir == "right") return "top";
-    } else if (dxy == pair(1, 0)) { // right
+    } else if (dxy == Pair(1, 0)) { // right
         if (dir == "front") return "right";
         if (dir == "back") return "left";
         if (dir == "left") return "top";
@@ -164,11 +245,11 @@ std::string get_dir(const std::string& dir, const pair& dxy) {
     return ""; // in case of an invalid direction
 }
 
-bool inMaze(const pair& pos) {
+bool inMaze(const Pair& pos) {
     return pos.first >= 0 && pos.first < 16 && pos.second >= 0 && pos.second < 16;
 }
 
-void runMouse(pair& pos, pair& dxy, const pair& target) {
+void runMouse(Pair& pos, Pair& dxy, const Pair& target) {
     while (pos != target) {
         cells[pos.second][pos.first] //set front wall
             .setByName(
@@ -206,7 +287,7 @@ void runMouse(pair& pos, pair& dxy, const pair& target) {
         flood_fill(target.first, target.second);
         updateGUIflood();
 
-        pair next = pos+dxy;
+        Pair next = pos+dxy;
         while (!is_path(pos.first, pos.second, next.first, next.second)
             || !(flood[next.second][next.first] < flood[pos.second][pos.first])) {
             API::turnRight();
@@ -226,10 +307,10 @@ int main(int argc, char* argv[]) {
     updateGUIflood();
     log("Done!");
 
-    pair dxy = pair(0, -1); // direction vector
-    pair pos = pair(0, 15); // starting position
+    Pair dxy = Pair(0, -1); // direction vector
+    Pair pos = Pair(0, 15); // starting position
 
-    runMouse(pos, dxy, pair(7, 7));
+    runMouse(pos, dxy, Pair(7, 7));
 
     API::setColor(0, 0, 'G');
     API::setText(0, 0, "abhdbekf");
