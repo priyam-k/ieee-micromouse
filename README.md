@@ -1,6 +1,18 @@
 # ieee-micromouse
 ieee micromouse repo for 2024-25 yr
 
+# FINAL CODE
+This repository contains our full journey through programming our micromouse for the MIT Micromouse Competition on October 12th, 2024. It includes:
+- initial Python floodfill testing with mms
+- the translation to C++ (on mms)
+- making it work on Arduino
+- rewriting C++ standard libraries to save flash space
+- switching to an STM32 Nucleo board for increased flash space
+- our final code when competing (with step-turns to compensate for low torque and other necessary last-minute changes)
+
+Our final competition code is in `final-micromouse.ino` in the `FINAL-MICROMOUSE` folder!
+
+
 ## mms-floodfill.py
 - full floodfill algorithm and maze solving implemented
 - uses mms tool from https://github.com/mackorone/mms
